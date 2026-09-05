@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>المحفظة الذكية - إدارة المصروفات</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+
+        :root {
+            --bg-app: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #3b82f6;
+            --accent: #0ea5e9;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-app); color: var(--text-main);
+            font-family: 'Tajawal', sans-serif; padding: 20px 15px 80px 15px;
+        }
+
+        .container { max-width: 600px; margin: 0 auto; }
+
+        /* ------------------ الهيدر ------------------ */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header h1 { font-size: 1.5rem; font-weight: 900; background: linear-gradient(to left, var(--primary), var(--accent)); -webkit-background-clip: text; color: transparent; }
+        .setup-btn { background: rgba(59, 130, 246, 0.2); color: var(--accent); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: 'Tajawal'; }
+        .setup-btn:active { transform: scale(0.95); background: var(--primary); color: white; }
+
+        /* ------------------ لوحة التحكم (Dashboard) ------------------ */
+        .dashboard { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px; }
+        
+        .main-card {
+            background: linear-gradient(135deg, var(--primary), #1e3a8a);
+            padding: 25px 20px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 25px rgba(30, 58, 138, 0.4); position: relative; overflow: hidden;
+        }
+        .main-card::after { content: '💰'; position: absolute; top: -10px; left: -10px; font-size: 6rem; opacity: 0.1; }
+        .balance-title { font-size: 0.9rem; color: #bae6fd; margin-bottom: 5px; font-weight: 700; }
+        .balance-amount { font-size: 2.8rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 15px; }
+
+        /* الشبكة المصغرة (يومي وأسبوعي) */
+        .sub-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .sub-card {
+            background: var(--card-bg); padding: 15px; border-radius: 16px;
+            border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .sub-card h3 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .spent-val { font-size: 1.4rem; font-weight: 900; margin-bottom: 8px; }
+        .limit-val { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; }
+        
+        .progress-bg { width: 100%; height: 6px; background: #334155; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: var(--success); transition: width 0.4s, background 0.4s; }
+
+        /* ------------------ نموذج الإضافة ------------------ */
+        .add-form {
+            background: var(--card-bg); padding: 20px; border-radius: 16px;
+            border: 1px solid #334155; margin-bottom: 25px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .full-width { grid-column: span 2; }
+        
+        input, select {
+            padding: 12px; border-radius: 10px; border: 1px solid #475569;
+            font-family: 'Tajawal', sans-serif; font-size: 0.95rem; font-weight: 700;
+            background: #0f172a; color: white; outline: none; transition: 0.2s; width: 100%;
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+
+        .add-btn {
+            background: var(--primary); color: white; border: none; padding: 15px;
+            border-radius: 10px; font-family: 'Tajawal', sans-serif; font-weight: 900;
+            font-size: 1.1rem; cursor: pointer; transition: 0.2s;
+        }
+        .add-btn:active { transform: scale(0.95); background: var(--accent); }
+
+        /* ------------------ سجل العمليات ------------------ */
+        .section-title { font-size: 1.1rem; font-weight: 900; margin-bottom: 15px; color: var(--text-main); }
+        .transaction-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .transaction-card {
+            background: var(--card-bg); border-radius: 12px; padding: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-right: 4px solid var(--primary); border-bottom: 1px solid #1e293b;
+        }
+        .tx-info { display: flex; flex-direction: column; gap: 4px; }
+        .tx-title { font-weight: 900; font-size: 1rem; }
+        .tx-date { font-size: 0.75rem; color: var(--text-muted); }
+        .tx-category { font-size: 0.7rem; color: #fff; background: #475569; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 2px;}
+        
+        .tx-cost { font-weight: 900; color: var(--danger); font-size: 1.1rem; display: flex; align-items: center; gap: 10px;}
+        .delete-btn { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center;}
+
+        /* ------------------ مودال الإعدادات والرزالة ------------------ */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); z-index: 2000;
+            display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-content {
+            background: var(--card-bg); width: 90%; max-width: 350px;
+            padding: 30px 20px; border-radius: 20px; text-align: center;
+            border: 1px solid #334155; box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+        .modal-icon { font-size: 4rem; margin-bottom: 10px; }
+        .modal-title { font-size: 1.4rem; font-weight: 900; margin-bottom: 10px; color: var(--text-main); }
+        .modal-text { font-size: 1rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 25px; }
+        
+        .modal-btn {
+            background: var(--primary); color: white; border: none; padding: 12px 30px;
+            border-radius: 10px; font-family: 'Tajawal', sans-serif; font-weight: 900;
+            font-size: 1rem; cursor: pointer; transition: 0.2s; width: 100%;
+        }
+
+        .empty-state { text-align: center; color: var(--text-muted); padding: 30px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>المحفظة الذكية 📈</h1>
+            <button class="setup-btn" onclick="openSetupModal()">إعداد الميزانية ⚙️</button>
+        </div>
+
+        <div class="dashboard">
+            <div class="main-card">
+                <div class="balance-title">المتبقي من ميزانية الشهر</div>
+                <div class="balance-amount" id="month-remain">0</div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #bae6fd; margin-bottom: 8px;">
+                    <span>صرفت: <span id="month-spent">0</span></span>
+                    <span id="month-pct">0%</span>
+                </div>
+                <div class="progress-bg" style="background: rgba(255,255,255,0.2);">
+                    <div class="progress-fill" id="month-bar" style="background: #fff;"></div>
+                </div>
+            </div>
+
+            <div class="sub-cards">
+                <div class="sub-card">
+                    <h3>صرف اليوم <span>📅</span></h3>
+                    <div class="spent-val" id="day-spent">0</div>
+                    <div class="limit-val">الحد: <span id="day-limit">0</span></div>
+                    <div class="progress-bg"><div class="progress-fill" id="day-bar"></div></div>
+                </div>
+                <div class="sub-card">
+                    <h3>صرف الأسبوع <span>📊</span></h3>
+                    <div class="spent-val" id="week-spent">0</div>
+                    <div class="limit-val">الحد: <span id="week-limit">0</span></div>
+                    <div class="progress-bg"><div class="progress-fill" id="week-bar"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="add-form">
+            <input type="text" id="tx-name" class="full-width" placeholder="شنو اشتريت؟ (مثال: ملزمة، رصيد)">
+            <input type="number" id="tx-amount" placeholder="المبلغ (د.ع)">
+            <select id="tx-category">
+                <option value="دراسة">دراسة وملازم 📚</option>
+                <option value="أكل">أكل وكافتيريا 🍔</option>
+                <option value="نقل">نقل وخطوط 🚕</option>
+                <option value="ترفيه">ترفيه وطلعات ☕</option>
+                <option value="أخرى">أخرى 🛒</option>
+            </select>
+            <button class="add-btn full-width" onclick="addTransaction()">تسجيل المصروف 💸</button>
+        </div>
+
+        <div class="section-title">آخر الحركات المالية</div>
+        <div class="transaction-list" id="tx-list"></div>
+    </div>
+
+    <div class="modal-overlay" id="setup-modal">
+        <div class="modal-content">
+            <div class="modal-icon">⚙️</div>
+            <div class="modal-title">تحديد الميزانية</div>
+            <div class="modal-text">حدد ميزانيتك الشهرية، والتطبيق راح يقسمها لليوم والأسبوع تلقائياً.</div>
+            <input type="number" id="budget-input" placeholder="المبلغ الشهري الكلي..." style="margin-bottom: 20px;">
+            <button class="modal-btn" onclick="saveBudget()">حفظ وبدء التتبع</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="roast-modal">
+        <div class="modal-content">
+            <div class="modal-icon" id="roast-icon">🚨</div>
+            <div class="modal-title" id="roast-title" style="color: var(--danger);">عجز مالي!</div>
+            <div class="modal-text" id="roast-text">تجاوزت الحد المسموح.</div>
+            <button class="modal-btn" style="background: var(--text-muted);" onclick="document.getElementById('roast-modal').classList.remove('active')">فهمت 😞</button>
+        </div>
+    </div>
+
+    <script>
+        let monthlyBudget = parseFloat(localStorage.getItem('smartWalletBudget')) || 0;
+        let transactions = JSON.parse(localStorage.getItem('smartWalletTx')) || [];
+
+        // حسابات الحدود التلقائية (شهر = 30 يوم، أسبوع = 7 أيام)
+        let dailyLimit = monthlyBudget / 30;
+        let weeklyLimit = (monthlyBudget / 30) * 7;
+
+        function formatMoney(num) { return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+        function openSetupModal() { 
+            document.getElementById('budget-input').value = monthlyBudget > 0 ? monthlyBudget : '';
+            document.getElementById('setup-modal').classList.add('active'); 
+        }
+
+        function saveBudget() {
+            const val = parseFloat(document.getElementById('budget-input').value);
+            if(val > 0) {
+                monthlyBudget = val;
+                dailyLimit = monthlyBudget / 30;
+                weeklyLimit = dailyLimit * 7;
+                localStorage.setItem('smartWalletBudget', monthlyBudget);
+                document.getElementById('setup-modal').classList.remove('active');
+                updateDashboard();
+            }
+        }
+
+        // دوال التواريخ (التصفير التلقائي يعتمد عليها)
+        function isToday(dateStr) {
+            const d = new Date(dateStr); const today = new Date();
+            return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+        }
+
+        function isThisWeek(dateStr) {
+            const d = new Date(dateStr); const today = new Date();
+            // تبسيط: هل التاريخ ضمن آخر 7 أيام؟
+            const diffTime = Math.abs(today - d);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays <= 7 && d.getMonth() === today.getMonth();
+        }
+
+        function isThisMonth(dateStr) {
+            const d = new Date(dateStr); const today = new Date();
+            return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+        }
+
+        function addTransaction() {
+            if(monthlyBudget === 0) return openSetupModal();
+
+            const name = document.getElementById('tx-name').value.trim();
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+            const category = document.getElementById('tx-category').value;
+
+            if(!name || isNaN(amount) || amount <= 0) return alert("الرجاء إدخال البيانات بشكل صحيح!");
+
+            const tx = { id: Date.now(), name, amount, category, date: new Date().toISOString() };
+            transactions.push(tx);
+            localStorage.setItem('smartWalletTx', JSON.stringify(transactions));
+
+            document.getElementById('tx-name').value = ''; document.getElementById('tx-amount').value = '';
+            updateDashboard(); checkRoasts();
+        }
+
+        function deleteTx(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            localStorage.setItem('smartWalletTx', JSON.stringify(transactions));
+            updateDashboard();
+        }
+
+        function getProgressBarColor(percentage) {
+            if(percentage < 60) return 'var(--success)';
+            if(percentage < 90) return 'var(--warning)';
+            return 'var(--danger)';
+        }
+
+        function updateDashboard() {
+            let daySpent = 0; let weekSpent = 0; let monthSpent = 0;
+
+            // فلترة وحساب المجاميع تلقائياً بناءً على التاريخ
+            transactions.forEach(tx => {
+                if(isToday(tx.date)) daySpent += tx.amount;
+                if(isThisWeek(tx.date)) weekSpent += tx.amount;
+                if(isThisMonth(tx.date)) monthSpent += tx.amount;
+            });
+
+            // تحديث النصوص
+            document.getElementById('month-remain').innerText = formatMoney(monthlyBudget - monthSpent);
+            document.getElementById('month-spent').innerText = formatMoney(monthSpent);
+            
+            document.getElementById('day-spent').innerText = formatMoney(daySpent);
+            document.getElementById('day-limit').innerText = formatMoney(dailyLimit);
+            
+            document.getElementById('week-spent').innerText = formatMoney(weekSpent);
+            document.getElementById('week-limit').innerText = formatMoney(weeklyLimit);
+
+            // تحديث أشرطة التقدم
+            let monthPct = monthlyBudget > 0 ? (monthSpent / monthlyBudget) * 100 : 0;
+            let dayPct = dailyLimit > 0 ? (daySpent / dailyLimit) * 100 : 0;
+            let weekPct = weeklyLimit > 0 ? (weekSpent / weeklyLimit) * 100 : 0;
+
+            document.getElementById('month-pct').innerText = Math.min(100, Math.round(monthPct)) + '%';
+            
+            const monthBar = document.getElementById('month-bar');
+            monthBar.style.width = Math.min(100, monthPct) + '%';
+            monthBar.style.background = monthPct > 90 ? 'var(--danger)' : '#fff';
+
+            const dayBar = document.getElementById('day-bar');
+            dayBar.style.width = Math.min(100, dayPct) + '%';
+            dayBar.style.background = getProgressBarColor(dayPct);
+
+            const weekBar = document.getElementById('week-bar');
+            weekBar.style.width = Math.min(100, weekPct) + '%';
+            weekBar.style.background = getProgressBarColor(weekPct);
+
+            // تلوين العجز
+            document.getElementById('month-remain').style.color = (monthlyBudget - monthSpent) < 0 ? 'var(--danger)' : 'white';
+            document.getElementById('day-spent').style.color = daySpent > dailyLimit ? 'var(--danger)' : 'white';
+            document.getElementById('week-spent').style.color = weekSpent > weeklyLimit ? 'var(--danger)' : 'white';
+
+            // رسم القائمة (عرض آخر 15 عملية فقط)
+            const list = document.getElementById('tx-list');
+            list.innerHTML = '';
+            
+            if(transactions.length === 0) {
+                list.innerHTML = `<div class="empty-state">لا توجد حركات مالية مسجلة 💸</div>`;
+                return;
+            }
+
+            const recentTx = [...transactions].reverse().slice(0, 15);
+            recentTx.forEach(tx => {
+                const dateObj = new Date(tx.date);
+                const timeString = dateObj.toLocaleTimeString('ar-IQ', {hour: '2-digit', minute:'2-digit'});
+                const dateString = dateObj.toLocaleDateString('ar-IQ', {month: 'short', day: 'numeric'});
+
+                let catColor = "var(--primary)";
+                if(tx.category === 'أكل') catColor = "var(--warning)";
+                if(tx.category === 'ترفيه') catColor = "var(--danger)";
+                if(tx.category === 'نقل') catColor = "#8b5cf6";
+
+                const card = document.createElement('div');
+                card.className = 'transaction-card';
+                card.style.borderRightColor = catColor;
+                card.innerHTML = `
+                    <div class="tx-info">
+                        <div class="tx-title">${tx.name}</div>
+                        <div class="tx-date">${dateString} - ${timeString}</div>
+                        <div class="tx-category" style="background:${catColor}">${tx.category}</div>
+                    </div>
+                    <div class="tx-cost">
+                        -${formatMoney(tx.amount)}
+                        <button class="delete-btn" onclick="deleteTx(${tx.id})">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // نظام الرزايل المالي
+        function checkRoasts() {
+            let daySpent = 0; let monthSpent = 0;
+            transactions.forEach(tx => {
+                if(isToday(tx.date)) daySpent += tx.amount;
+                if(isThisMonth(tx.date)) monthSpent += tx.amount;
+            });
+
+            const modal = document.getElementById('roast-modal');
+            const title = document.getElementById('roast-title');
+            const text = document.getElementById('roast-text');
+
+            if (monthSpent > monthlyBudget) {
+                title.innerText = "إفلاس شهري! 📉";
+                text.innerText = "عبرت الميزانية الشهرية.. كافي صرف وگوم اقرا اقتصاد أحسلك!";
+                modal.classList.add('active');
+            } else if (daySpent > dailyLimit) {
+                title.innerText = "عجز يومي! 🚨";
+                text.innerText = "صرفت اليوم أكثر من المسموح.. باجر لازم تقتصد حتى تعوض العجز!";
+                modal.classList.add('active');
+            }
+        }
+
+        // تشغيل أولي
+        if(monthlyBudget === 0) { openSetupModal(); } 
+        else { updateDashboard(); }
+
+    </script>
+</body>
+</html>
