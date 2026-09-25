@@ -86,6 +86,42 @@
         .roast-title { font-size: 1.4rem; font-weight: 900; margin-bottom: 10px; color: var(--danger); }
         .roast-text { font-size: 1.05rem; color: var(--text-main); line-height: 1.5; margin-bottom: 25px; font-weight: bold;}
         .chart-container { position: relative; width: 100%; max-width: 300px; margin: 0 auto; padding: 10px 0; }
+
+        /* إشعار التثبيت */
+        .install-banner {
+            position: fixed;
+            top: -150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 9999;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+        }
+        .install-banner.show {
+            top: 20px;
+        }
+        .install-banner strong {
+            font-size: 1.1rem;
+            color: var(--accent);
+            display: block;
+            margin-bottom: 5px;
+        }
+        .install-banner p {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 15px;
+        }
+        .install-actions {
+            display: flex;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -274,6 +310,16 @@
                 <button class="btn-primary" style="background: var(--success);" onclick="saveSplitAll()">أنا دفعت للكل 👑 (تحويل ديون)</button>
                 <button class="btn-primary" style="background: #475569;" onclick="document.getElementById('splitter-modal').classList.remove('active')">إلغاء</button>
             </div>
+        </div>
+    </div>
+
+    <!-- إشعار تثبيت التطبيق -->
+    <div id="install-banner" class="install-banner">
+        <strong>تثبيت التطبيق 📱</strong>
+        <p>ثبّت "المحفظة الذكية" على شاشتك الرئيسية ليعمل بدون إنترنت وتوصله أسرع!</p>
+        <div class="install-actions">
+            <button id="install-btn" class="btn-primary">تثبيت الآن</button>
+            <button id="close-install-btn" class="btn-primary" style="background: transparent; border: 1px solid #475569; color: var(--text-muted);">لاحقاً</button>
         </div>
     </div>
 
@@ -732,10 +778,36 @@
         }
 
         if(monthlyBudget === 0) openSetupModal(); else updateUI();
-    </script>
 
-    <!-- تسجيل Service Worker ليعمل التطبيق بدون إنترنت 👇 -->
-    <script>
+        // --- نظام إشعار التثبيت (PWA Install Prompt) ---
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+        const installBtn = document.getElementById('install-btn');
+        const closeInstallBtn = document.getElementById('close-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            setTimeout(() => {
+                installBanner.classList.add('show');
+            }, 3000);
+        });
+
+        installBtn.addEventListener('click', async () => {
+            installBanner.classList.remove('show');
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                deferredPrompt = null;
+            }
+        });
+
+        closeInstallBtn.addEventListener('click', () => {
+            installBanner.classList.remove('show');
+        });
+
+        // --- تسجيل Service Worker ليعمل التطبيق بدون إنترنت ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
